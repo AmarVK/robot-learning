@@ -10,11 +10,11 @@
 % Calling functions : 'botNext' - gives out the next state for the bot and
 % 'valueUpdate' - updates the value function after the transition
 %% Initial world setup
-
+count = 0;
 ball_world = zeros(5,5);    % This is the state description of the ball. Ball position is given by the cell that has a value '10'
 bot_world = zeros(5,5);     % This is the state description of the ball. Ball position is given by the cell that has a value '10'
 value_table = zeros(25,5);  % Initializing the value table to be 0
-display = 1;
+display = 0;
 % Giving the terminal states of the game a high value of 100
 for i=1:25
     if mod(i,5)==0
@@ -22,33 +22,51 @@ for i=1:25
     end
 end
 %% 
-iter = 1;        % Number of iterations
+iter = 100;        % Number of iterations
+%count = zeros(iter,1);
 for i = 1:iter
     ball_col = randi(5);   % The ball can start from any random position in the first row
     bot_init_col = randi(5);    % Randomly allocating the initial position of the bot in any colum
-    for t = 0:6                % Each episode. 20 time steps are given for the ball befor timeout
-        T = t+1 ;               % To find the learning rate
+    for t = 0:5                % Each episode. 20 time steps are given for the ball befor timeout
+        T = iter+1 ;               % To find the learning rate
         alpha = 1/T;            % Learning rate
+%       alpha = 1;
         if t ==0                % Assigning the initial column value of the ball to the current column value
-            ball_curr_row = 1;
-            bot_curr_col = bot_init_col;
+            ball_prev_row = 1;
+            bot_prev_col = bot_init_col;
         else                    % Assigning the previous state predictions to current state values
-            ball_curr_row = ball_next_row;
-            bot_curr_col = bot_next_col;
+            ball_prev_row = ball_curr_row;
+            bot_prev_col = bot_curr_col;
         end
         % State-space of the ball
         ball_world = zeros(5,5); % Initializing the statespace   
         % ball_curr_row = mod(t,5)+1; % Finding the row value of the ball
+        ball_curr_row = mod(ball_prev_row + 1,5)+1;   % Finding the next row of the ball
         ball_world(ball_curr_row , ball_col) = 10;   % Setting up the current ball-state
-        ball_next_row = mod(ball_curr_row + 1,5)+1;   % Finding the next row of the ball
+        
         
         % State-space of the bot
         bot_world = zeros(5,5); %Initializing statespace of the bot
+        bot_curr_col = botNext(ball_prev_row, ball_col, bot_prev_col, value_table);  % Finding the next state of the bot
         bot_world(5, bot_curr_col) = 50;
-        bot_next_col = botNext(ball_curr_row, ball_col, bot_curr_col, value_table);  % Finding the next state of the bot
         %Update the value table
-        value_table = valueUpdate(ball_curr_row, ball_col, ball_next_row, bot_curr_col, bot_next_col, value_table, alpha);
 
+        value_table = valueUpdate(ball_prev_row, ball_col, ball_curr_row, bot_prev_col, bot_curr_col, value_table, alpha);
+
+        if bot_world == ball_world*5;
+            %Final display of states
+            world = ball_world + bot_world;
+            count = count +1
+            if display ==1;
+                image(world)
+                axis ij
+                axis square
+                pause('on')
+                pause(0.75)
+                pause('off')
+            end
+            break
+        end
         %Displaying the images as an animation
         world = ball_world + bot_world;
         if display == 1
@@ -56,22 +74,18 @@ for i = 1:iter
             axis ij
             axis square
             pause('on')
-            pause(0.5)
+            pause(0.15)
             pause('off')
         end
         % Checking if the terminal states are reached
-        if bot_world == ball_world*5;
-            %Final display of states
-            world = ball_world + bot_world;
-            image(world)
-            axis ij
-            axis square
-            pause('on')
-            pause(0.5)
-            pause('off')
-           break
+
+        for m=1:25
+            if mod(m,5)==0
+                value_table(m,5)=100;
+            end
         end
          
 
     end
 end
+%plot (iter,count)
