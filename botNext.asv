@@ -1,0 +1,4 @@
+function f = botNext(i,j,k,array)
+   [a b c d] = stateNext(i, j, k); % [a,b] is one potential state and [b,c] is 
+    %f = mod(k+1,5)+1;
+end
